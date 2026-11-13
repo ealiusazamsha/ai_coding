@@ -1,1 +1,30 @@
-/* Operations styles are in globals.css to keep the starter deployment minimal. */
+.ops-header-actions{display:flex;gap:10px;flex-wrap:wrap}
+.ops-setup{display:flex;gap:20px;background:#fff;border:1px solid var(--border);padding:25px;border-radius:19px;margin:22px 0 32px}
+.ops-setup-icon{background:#eaf2ff;color:var(--primary);border-radius:14px;width:52px;height:52px;flex-shrink:0;display:grid;place-items:center}
+.ops-setup h2,.ops-panel h2{margin:0 0 9px;font-size:19px;letter-spacing:-.03em}
+.ops-setup p{color:var(--muted);font-size:13px;line-height:1.7}
+.ops-login{width:min(100%,560px)}
+.ops-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:12px 0 42px}
+.ops-panel{background:white;border:1px solid var(--border);border-radius:18px;padding:24px;min-width:0}
+.ops-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:19px}
+.ops-panel-head>span,.ops-caption{font-size:12px;color:var(--muted);line-height:1.6}
+.ops-form{display:flex;flex-direction:column;align-items:stretch;gap:13px;margin-bottom:18px}
+.ops-form label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:700;color:#43566e}
+.ops-form input,.ops-form select{width:100%;border:1px solid #d8e3f0;border-radius:11px;padding:11px 12px;background:#fff;color:var(--ink);font-size:13px;min-width:0}
+.ops-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ops-inline-form{display:grid;grid-template-columns:1fr 120px;align-items:end}
+.ops-inline-form>button{grid-column:1/-1;justify-self:start}
+.ops-form>.btn{align-self:start}
+.ops-list{display:flex;flex-direction:column;gap:9px;max-height:350px;overflow:auto}
+.ops-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#f8fbff;border:1px solid #edf2f9;border-radius:11px;padding:12px 13px}
+.ops-list-row b,.ops-list-row small{display:block}
+.ops-list-row b{font-size:13px}.ops-list-row small{font-size:11px;color:var(--muted);margin-top:4px}
+.ops-pill{border:1px solid #eadaba;background:#fff4e1;color:#845916;border-radius:30px;padding:8px 12px;font-size:11px;font-weight:700;white-space:nowrap}
+.ops-pill.is-approved{border-color:#c4e8d3;background:#e9f9ef;color:#258151}
+.ops-error,.ops-success{padding:13px 16px;border-radius:10px;font-size:13px;line-height:1.6}
+.ops-error{color:#a12436;border:1px solid #f2c4cb;background:#fff1f3}
+.ops-success{color:#23764c;border:1px solid #bde5ce;background:#edfaf2}
+.ops-refresh{display:flex;align-items:center;gap:7px;background:#edf4ff;border:0;color:#2469ec;border-radius:10px;padding:10px;font-size:12px;font-weight:700}
+.ops-governance{margin-top:30px}
+@media(max-width:900px){.ops-admin-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.ops-setup{flex-direction:column}.ops-form-row,.ops-inline-form{grid-template-columns:1fr}.ops-header-actions{gap:5px}.ops-header-actions .btn{padding:10px;font-size:11px}.ops-panel{padding:16px}}
