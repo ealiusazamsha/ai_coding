@@ -22,6 +22,7 @@ def require_database() -> None:
 
 
 class CaseCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     subject: str = Field(min_length=4, max_length=160)
     message: str = Field(min_length=10, max_length=3000)
 

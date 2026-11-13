@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -23,6 +23,7 @@ router = APIRouter(prefix="/api/v1/admin", tags=["merchant-operations"])
 
 
 class SupplierCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     name: str = Field(min_length=2, max_length=160)
     integration_type: str = Field(pattern="^(api|file|manual)$")
 
@@ -32,6 +33,7 @@ class SupplierApproval(BaseModel):
 
 
 class SupplierOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: UUID
     name: str
     integration_type: str
@@ -39,6 +41,7 @@ class SupplierOut(BaseModel):
 
 
 class ProductCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     sku: str = Field(min_length=1, max_length=128)
     name: str = Field(min_length=2, max_length=200)
     description: str = Field(default="", max_length=3000)
@@ -48,6 +51,7 @@ class ProductCreate(BaseModel):
 
 
 class ProductUpdate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     name: str | None = Field(default=None, min_length=2, max_length=200)
     description: str | None = Field(default=None, max_length=3000)
     category: str | None = Field(default=None, min_length=2, max_length=120)
@@ -56,6 +60,7 @@ class ProductUpdate(BaseModel):
 
 
 class ProductAdminOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: UUID
     sku: str
     name: str
@@ -67,6 +72,7 @@ class ProductAdminOut(BaseModel):
 
 
 class OfferUpsert(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
     product_id: UUID
     supplier_id: UUID
     supplier_sku: str = Field(min_length=1, max_length=200)
@@ -76,6 +82,7 @@ class OfferUpsert(BaseModel):
 
 
 class OfferOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: UUID
     product_id: UUID
     supplier_id: UUID
