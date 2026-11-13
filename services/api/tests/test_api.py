@@ -31,3 +31,8 @@ def test_payments_and_orders_disabled_in_preview():
     assert client.post("/api/v1/quotes", json={"items":[{"product_id":"00000000-0000-0000-0000-000000000001","quantity":1}]}).status_code == 503
     assert client.post("/api/v1/orders", json={"items":[],"idempotency_key":"a-valid-key-123"}).status_code in (401,422)
     assert client.get("/ready").status_code == 503
+
+def test_admin_route_disabled_in_demo_mode():
+    result = client.get("/api/v1/admin/summary")
+    # Authentication is required and/or the operator API remains disabled.
+    assert result.status_code in (401, 503)

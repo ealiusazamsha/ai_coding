@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Activity, AlertTriangle, Bot, CheckCircle2, CreditCard, LockKeyhole, LogOut, Package, PackageCheck, Plus, RefreshCw, ShieldCheck, Store } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Activity, AlertTriangle, Bot, CheckCircle2, LockKeyhole, LogOut, Package, PackageCheck, Plus, RefreshCw, ShieldCheck, Store } from "lucide-react";
 import "./operations.css";
 
 type Summary = {
@@ -81,7 +81,7 @@ export default function Operations() {
     setSummary(s); setSuppliers(su); setProducts(pr); setOffers(of); setAudit(au);
   }
 
-  async function signIn(event: React.FormEvent<HTMLFormElement>) {
+  async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setNotice(""); setBusy(true);
     try {
       const response = await fetch(supabaseUrl + "/auth/v1/token?grant_type=password", {
@@ -259,7 +259,7 @@ export default function Operations() {
       </section>
 
       <section className="ops-panel">
-        <div className="ops-panel-head"><h2>Audit trail</h2><button className="ops-refresh" disabled={busy} onClick={() => void action("/audit?limit=20", "PATCH", {}, "Updated")}>
+        <div className="ops-panel-head"><h2>Audit trail</h2><button className="ops-refresh" disabled={busy} onClick={() => { setBusy(true); setError(""); void loadData(token).then(() => setNotice("Dashboard refreshed.")).catch(err => setError(err instanceof Error ? err.message : "Refresh failed")).finally(() => setBusy(false)); }}>
           <RefreshCw size={16}/> Refresh data
         </button></div>
         <div className="ops-list">{audit.length ? audit.map(item => <div className="ops-list-row" key={item.id}>

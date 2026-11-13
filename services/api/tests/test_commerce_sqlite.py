@@ -36,7 +36,7 @@ def database():
         db.flush()
         db.add(SupplierOffer(tenant_id=DEMO_TENANT,supplier_id=supplier.id,product_id=product.id,
                              supplier_sku="SUP-A1",unit_cost_minor=2000,currency="BDT",
-                             quantity=10,synced_at=datetime.now(timezone.utc)))
+                             quantity=10,synced_at=datetime.now(timezone.utc),source_verified=True))
         db.commit()
         yield db,product,supplier
 
