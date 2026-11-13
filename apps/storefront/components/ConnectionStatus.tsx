@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 type SocketStatus = "connecting" | "connected" | "disconnected";
 type ServerMessage = { type?: string; mode?: string };
 
-const url = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws/v1/demo";
+const url = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8001/ws/v1/demo";
 
 export default function ConnectionStatus() {
   const [status, setStatus] = useState<SocketStatus>("connecting");

@@ -28,3 +28,6 @@
 .ops-governance{margin-top:30px}
 @media(max-width:900px){.ops-admin-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.ops-setup{flex-direction:column}.ops-form-row,.ops-inline-form{grid-template-columns:1fr}.ops-header-actions{gap:5px}.ops-header-actions .btn{padding:10px;font-size:11px}.ops-panel{padding:16px}}
+
+.ops-case-message{max-width:380px;margin:6px 0;font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted)}
+.ops-case-status{background:#fff;border:1px solid var(--border);border-radius:9px;padding:9px;font-size:12px;max-width:110px}

@@ -13,6 +13,7 @@ type Supplier = { id: string; name: string; integration_type: string; approved: 
 type Product = { id: string; sku: string; name: string; description: string; category: string; status: string; sale_price_minor: number; currency: string };
 type Offer = { id: string; product_id: string; supplier_id: string; supplier_sku: string; unit_cost_minor: number; currency: string; quantity: number; source_verified: boolean };
 type Audit = { id: string; action: string; resource_type: string; occurred_at: string; correlation_id: string };
+type SupportCase = { id: string; subject: string; message: string; status: string; created_at: string; updated_at: string };
 type Capabilities = { catalog_mode: string };
 
 const api = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
@@ -34,6 +35,18 @@ async function authorized<T>(path: string, token: string, init?: RequestInit): P
   return response.json() as Promise<T>;
 }
 
+async function accountSupport<T>(path: string, token: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(api + "/api/v1/support/admin" + path, {
+    ...init, cache: "no-store",
+    headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(typeof data.detail === "string" ? data.detail : "Support request failed (" + response.status + ")");
+  }
+  return response.json() as Promise<T>;
+}
+
 export default function Operations() {
   const [mode, setMode] = useState<"loading" | "demo" | "database" | "offline">("loading");
   const [token, setToken] = useState("");
@@ -47,6 +60,7 @@ export default function Operations() {
   const [products, setProducts] = useState<Product[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [audit, setAudit] = useState<Audit[]>([]);
+  const [supportCases, setSupportCases] = useState<SupportCase[]>([]);
   const [supplierName, setSupplierName] = useState("");
   const [supplierType, setSupplierType] = useState("manual");
   const [productSku, setProductSku] = useState("");
@@ -71,14 +85,15 @@ export default function Operations() {
   }, []);
 
   async function loadData(accessToken: string) {
-    const [s, su, pr, of, au] = await Promise.all([
+    const [s, su, pr, of, au, ca] = await Promise.all([
       authorized<Summary>("/summary", accessToken),
       authorized<Supplier[]>("/suppliers", accessToken),
       authorized<Product[]>("/products", accessToken),
       authorized<Offer[]>("/offers", accessToken),
       authorized<Audit[]>("/audit?limit=20", accessToken),
+      accountSupport<SupportCase[]>("/cases", accessToken),
     ]);
-    setSummary(s); setSuppliers(su); setProducts(pr); setOffers(of); setAudit(au);
+    setSummary(s); setSuppliers(su); setProducts(pr); setOffers(of); setAudit(au); setSupportCases(ca);
   }
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
@@ -115,7 +130,7 @@ export default function Operations() {
 
   function logout() {
     setToken(""); setPassword(""); setSummary(null); setSuppliers([]); setProducts([]);
-    setOffers([]); setAudit([]); setError(""); setNotice("Signed out from the operator console.");
+    setOffers([]); setAudit([]); setSupportCases([]); setError(""); setNotice("Signed out from the operator console.");
   }
 
   const isAdmin = Boolean(token && summary);
@@ -258,6 +273,27 @@ export default function Operations() {
         </div>)}</div>
       </section>
 
+
+      <section className="ops-panel">
+        <div className="ops-panel-head"><h2>Customer support queue</h2><span>{supportCases.length} cases</span></div>
+        <p className="ops-caption">Only authenticated operators can view support requests. Each status change creates a tenant-scoped audit event.</p>
+        <div className="ops-list">{supportCases.length ? supportCases.map(item => <article className="ops-list-row" key={item.id}>
+          <div><b>{item.subject}</b><small>{new Date(item.created_at).toLocaleString()} · {item.status}</small>
+            <p className="ops-case-message">{item.message}</p></div>
+          <select className="ops-case-status" aria-label={"Status for " + item.subject} value={item.status} disabled={busy}
+            onChange={e => {
+              const nextStatus = e.target.value;
+              setBusy(true); setError(""); setNotice("");
+              void accountSupport("/cases/" + item.id + "/status", token,
+                { method: "PATCH", body: JSON.stringify({ status: nextStatus }) })
+                .then(() => loadData(token)).then(() => setNotice("Support status updated."))
+                .catch(err => setError(err instanceof Error ? err.message : "Unable to update status"))
+                .finally(() => setBusy(false));
+            }}>
+            <option value="open">Open</option><option value="reviewing">Reviewing</option><option value="resolved">Resolved</option>
+          </select>
+        </article>) : <p className="muted">No customer cases yet.</p>}</div>
+      </section>
       <section className="ops-panel">
         <div className="ops-panel-head"><h2>Audit trail</h2><button className="ops-refresh" disabled={busy} onClick={() => { setBusy(true); setError(""); void loadData(token).then(() => setNotice("Dashboard refreshed.")).catch(err => setError(err instanceof Error ? err.message : "Refresh failed")).finally(() => setBusy(false)); }}>
           <RefreshCw size={16}/> Refresh data
