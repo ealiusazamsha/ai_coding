@@ -3,7 +3,8 @@ from uuid import UUID
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from .config import settings\nfrom .realtime import router as realtime_router
+from .config import settings
+from .realtime import router as realtime_router
 from .database import get_db
 from .security import current_user
 from .demo import PRODUCTS
@@ -12,7 +13,8 @@ from .schemas import ProductOut, QuoteRequest, QuoteResponse, OrderRequest, Orde
 
 config = settings()
 app = FastAPI(title="AACP Commerce API", version="0.2.0", description="Python-native commerce foundation; live checkout disabled")
-app.include_router(realtime_router)\napp.add_middleware(CORSMiddleware,
+app.include_router(realtime_router)
+app.add_middleware(CORSMiddleware,
                    allow_origins=[s.strip() for s in __import__("os").getenv("AACP_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if s.strip()],
                    allow_methods=["GET","POST"], allow_headers=["Authorization","Content-Type","Idempotency-Key"])
 
