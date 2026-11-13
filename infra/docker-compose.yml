@@ -1,0 +1,20 @@
+# Developer preview only. Production DB must be a separate, dedicated Supabase Cloud project.
+services:
+  api:
+    build: ../services/api
+    environment:
+      AACP_ENV: development
+      AACP_DEMO_MODE: "true"
+      AACP_ALLOWED_ORIGINS: "http://localhost:3000"
+    ports:
+      - "8000:8000"
+  storefront:
+    build:
+      context: ../apps/storefront
+      args: {}
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
