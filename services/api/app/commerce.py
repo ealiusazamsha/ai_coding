@@ -20,9 +20,28 @@ def listing(db: Session, search: str = "", category: str = "") -> list[ProductOu
     items = db.scalars(statement.order_by(Product.name).limit(100)).all()
     if search:
         items = [p for p in items if search.lower() in (p.name+" "+p.description).lower()]
+    # Only source-verified, fresh offers from approved suppliers can signal availability.
+    available: set[UUID] = set()
+    if items:
+        product_map = {p.id: p for p in items}
+        offers = db.execute(
+            select(SupplierOffer, Supplier)
+            .join(Supplier, (Supplier.id == SupplierOffer.supplier_id) &
+                  (Supplier.tenant_id == tenant))
+            .where(SupplierOffer.tenant_id == tenant,
+                   SupplierOffer.product_id.in_(list(product_map)),
+                   SupplierOffer.source_verified.is_(True))
+        ).all()
+        for offer, supplier in offers:
+            product = product_map.get(offer.product_id)
+            if (product is not None and offer.currency == product.currency
+                    and product.sale_price_minor > 0 and offer_eligible(
+                        offer.quantity, 1, offer.synced_at, supplier.approved,
+                        offer.unit_cost_minor, product.sale_price_minor)):
+                available.add(product.id)
     return [ProductOut(id=str(p.id), name=p.name, category=p.category,
                        description=p.description, price_minor=p.sale_price_minor,
-                       currency=p.currency, in_stock=False, emoji="🛍️") for p in items]
+                       currency=p.currency, in_stock=p.id in available, emoji="🛍️") for p in items]
 
 def quote(db: Session, request: QuoteRequest) -> QuoteResponse:
     tenant = settings().tenant_id
