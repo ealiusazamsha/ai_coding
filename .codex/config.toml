@@ -1,7 +1,0 @@
-# AACP project-scoped Codex MCP configuration.
-# Codex loads .codex/config.toml only after the repository is trusted.
-# No passwords, bearer tokens or service-role credentials belong here.
-# The project_ref restricts access to the AACP Supabase project (not CareerFlow).
-[mcp_servers.supabase]
-url = "https://mcp.supabase.com/mcp?project_ref=bborikhazomedjzihyiv&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cfeedback%2Cnotebooks"
-enabled = true

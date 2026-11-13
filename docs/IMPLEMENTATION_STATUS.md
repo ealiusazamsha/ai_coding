@@ -19,6 +19,8 @@ Updated 2026-11-14. This repository is a development foundation, not a live comm
 | Pending-payment order services | Source prepared, cloud tests pending | `services/api/app/commerce.py` |
 | Agent orchestration | Not implemented | Only deterministic preview and policy rules |
 | GitHub CI | Workflows configured; earlier runs failed without usable logs | `.github/workflows/` |
-| Production deployment | Not performed | Cloud DB connection, providers, CI pending |
+| Local WebSocket demo | Implemented with origin checks; standalone tests passed; Docker not verified | `services/api/app/realtime.py`, `tests/test_realtime.py` |\n| Docker Compose and frontend WebSocket status | Configuration committed; local Docker run not verified | `infra/docker-compose.yml`, `apps/storefront/components/ConnectionStatus.tsx` |\n| Development workflow | ChatGPT → GitHub → local Docker, **not Codex** | `docs/WORKFLOW.md` |\n| Production deployment | Not performed | Cloud DB connection, providers, CI pending |
 
 **Next prerequisite:** Reconnect Supabase plugin with account/project access to AACP Commerce `mofxvnsmwyhparhesykz`, target `bborikhazomedjzihyiv`. Never migrate the unrelated CareerFlow database.
+
+The legacy project-scoped Codex MCP files were removed because Codex is not in the development workflow. Local Docker and WebSocket execution still require verification on the user's machine.\n

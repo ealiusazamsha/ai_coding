@@ -1,20 +1,37 @@
-# Developer preview only. Production DB must be a separate, dedicated Supabase Cloud project.
+# Local Docker development preview: no payments, no supplier purchasing.
+# Supabase Cloud is external; no local PostgreSQL or Redis is required for the demo.
+name: aacp
 services:
   api:
-    build: ../services/api
+    build:
+      context: ../services/api
     environment:
       AACP_ENV: development
       AACP_DEMO_MODE: "true"
-      AACP_ALLOWED_ORIGINS: "http://localhost:3000"
+      AACP_ALLOWED_ORIGINS: "${AACP_ALLOWED_ORIGINS:-http://localhost:3000}"
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 15s
+
   storefront:
     build:
       context: ../apps/storefront
-      args: {}
-    environment:
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      args:
+        NEXT_PUBLIC_API_BASE_URL: "${AACP_PUBLIC_API_URL:-http://localhost:8000}"
+        NEXT_PUBLIC_WS_URL: "${AACP_PUBLIC_WS_URL:-ws://localhost:8000/ws/v1/demo}"
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('node:http').get('http://127.0.0.1:3000', r => process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 4
+      start_period: 30s

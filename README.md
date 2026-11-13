@@ -2,7 +2,7 @@
 
 **Phase: development foundation / not production ready.** Python FastAPI backend, Next.js 16 storefront, dedicated Supabase Cloud PostgreSQL database design. Scope: supplier-fulfilled commerce in Bangladesh and approved international markets, with an extensible SaaS control plane later.
 
-## Implemented
+## Development workflow\nCode is authored here in ChatGPT, committed to GitHub, then pulled locally and run through Docker Compose. No Codex requirement. See [Local Docker + WebSocket runbook](docs/LOCAL_DOCKER.md) and [Workflow](docs/WORKFLOW.md).\n\n## Implemented
 - Responsive light-theme storefront with catalog filtering/search, preview cart and interactive **deterministic demo assistant**.
 - Illustrative operations preview (no real merchant data), clear demo/production capability indicators.
 - FastAPI health/readiness/capabilities, typed catalog and quote APIs, owner-scoped order read/write API.
@@ -29,7 +29,7 @@ infra/                   Deployment and secrets guidance
 .github/workflows/        Backend and frontend checks
 ```
 
-## Local development
+## Local Docker preview\n\n```powershell\ngit clone https://github.com/ealiusazamsha/ai_coding.git\ncd ai_coding\ndocker compose -f infra/docker-compose.yml up --build -d\n```\n\nThe browser demo WebSocket connects to `ws://localhost:8000/ws/v1/demo`; it does not represent real orders or payments.\n\n## Local development
 Requirements: Python 3.12+, Node.js 22+.
 ```bash
 cd services/api
