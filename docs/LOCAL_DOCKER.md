@@ -1,78 +1,73 @@
-# Local Docker + WebSocket workflow (no Codex)
+# Windows Docker — local AACP + WebSocket preview
 
-## Architecture
+## Fix: port 8000 already allocated
+The default host port for FastAPI is now **8001**, so an existing local app may continue to use 8000. The container itself still listens on 8000. Next.js is preconfigured at image BUILD time to connect to `http://localhost:8001` and `ws://localhost:8001/ws/v1/demo`.
 
-```text
-Browser http://localhost:3000
-  ├── HTTP REST ────────────────────► FastAPI http://localhost:8000/api/v1/*
-  └── WebSocket (demo heartbeat) ───► FastAPI ws://localhost:8000/ws/v1/demo
-
-FastAPI ───► Supabase Cloud PostgreSQL via TLS (future environment configuration)
-```
-
-**WebSocket is for live event delivery, not database connectivity.** Postgres connections use a secure PostgreSQL protocol connection from the Python backend to Supabase Cloud. The current WebSocket is a small, development-only heartbeat/catalog-preview channel, not authenticated order notifications.
-
-## Windows / PowerShell steps
-
-Prerequisites: Git, Docker Desktop with Compose v2, Docker Desktop running.
+### Step 1: update and restart
+In **PowerShell**, from your existing AACP repository folder:
 
 ```powershell
-git clone https://github.com/ealiusazamsha/ai_coding.git
-cd ai_coding
+git pull origin main
+docker compose -f infra/docker-compose.yml down
+docker compose -f infra/docker-compose.yml config
 docker compose -f infra/docker-compose.yml up --build -d
 docker compose -f infra/docker-compose.yml ps
 ```
 
-Open:
+Use `docker compose -f infra/docker-compose.yml logs --tail=100 api storefront` if a container fails. Avoid `down -v` and `docker system prune` unless you intentionally want to remove data or unused resources.
+
+### Step 2: check expected endpoints
 - Storefront: http://localhost:3000
-- FastAPI health: http://localhost:8000/health
-- FastAPI docs: http://localhost:8000/docs
-- WebSocket: ws://localhost:8000/ws/v1/demo
+- API health: http://localhost:8001/health
+- API documentation: http://localhost:8001/docs
+- Development WebSocket: ws://localhost:8001/ws/v1/demo
 
-The storefront shows **Demo WebSocket connected** when the handshake succeeds. WebSocket servers cannot be tested using a normal HTTP browser address bar. The page opens the browser WebSocket connection automatically.
+The homepage displays `Demo WebSocket connected` after the FastAPI demo handshake. In Chrome DevTools → Network → WS, inspect `system.connected` and `ping` / `pong` frames. This is a **development socket**, not real payments, inventory sync or customer/order event delivery.
 
-Verify from browser DevTools -> Network -> WS and inspect the `system.connected` message and subsequent `ping`/`pong` frames.
+### Step 3: identify another port conflict
+```powershell
+docker ps --format "table {{.Names}}\t{{.Ports}}"
+Get-NetTCPConnection -LocalPort 8001 -State Listen |
+  Select-Object LocalAddress, LocalPort, OwningProcess
+```
+If another process owns 8001, do **not** kill it blindly. Choose a free host port, e.g. 8010, by setting these together **before the build**:
 
-## Updates
+```powershell
+$env:AACP_API_HOST_PORT="8010"
+$env:AACP_PUBLIC_API_URL="http://localhost:8010"
+$env:AACP_PUBLIC_WS_URL="ws://localhost:8010/ws/v1/demo"
+docker compose -f infra/docker-compose.yml up --build -d
+```
 
+The frontend is compiled with browser URLs: setting only the host port is insufficient. To restore defaults in your current PowerShell session:
+```powershell
+Remove-Item Env:AACP_API_HOST_PORT,Env:AACP_PUBLIC_API_URL,Env:AACP_PUBLIC_WS_URL -ErrorAction SilentlyContinue
+```
+
+If port 3000 is in use too, set `$env:AACP_WEB_HOST_PORT="3001"` and `$env:AACP_ALLOWED_ORIGINS="http://localhost:3001"`; open http://localhost:3001. FastAPI WebSocket origin checks require the changed origin. These settings can also be placed in `infra/.env` or passed via an explicit Compose `--env-file`; do not commit credential-bearing environment files.
+
+## Architecture and security
+```text
+Browser http://localhost:3000
+  ├── HTTPS/HTTP REST ───────────────► FastAPI http://localhost:8001/api/v1/*
+  └── WebSocket demo heartbeat ──────► FastAPI ws://localhost:8001/ws/v1/demo
+
+Docker internal: API listens on port 8000, Next.js on port 3000.
+Supabase Cloud PostgreSQL is a separate TLS database connection for Python.
+```
+
+**WebSocket is not a database connection.** The standalone demo works without Supabase. Cloud migrations have not yet been applied by this conversation because the ChatGPT Supabase plugin lacks project permission.
+
+## Repeat updates
 ```powershell
 git pull origin main
 docker compose -f infra/docker-compose.yml up --build -d
-docker compose -f infra/docker-compose.yml logs -f --tail=100
+docker compose -f infra/docker-compose.yml ps
 ```
 
-Stop containers with `docker compose -f infra/docker-compose.yml down`.
-
-## Docker networking
-
-- Browsers on your Windows machine reach published ports using `localhost:3000` / `localhost:8000`.
-- Containers communicate via Compose DNS names, such as `api:8000`; **browser JavaScript cannot resolve `api`**.
-- Next.js `NEXT_PUBLIC_*` URLs are embedded when the image is built, not set by container runtime environment. Changing public API or WS URLs requires rebuilding the storefront image.
-- Default Compose port bindings use `127.0.0.1` for local-only access; do **not** expose an unauthenticated development API to the public internet.
-- For a trusted LAN machine, first change Compose's port bindings and the two public build args to a reachable host IP; then add the exact frontend origin to FastAPI's `AACP_ALLOWED_ORIGINS`. Secure and authenticate before any internet-facing deployment.
-- For HTTPS deployment, WebSocket URLs must start with `wss://`.
-
-## Local server development without Docker
-
-```bash
-# terminal 1
-cd services/api
-python -m venv .venv
-# Windows: .venv\\Scripts\\Activate.ps1
-# Unix: source .venv/bin/activate
-pip install -r requirements-dev.txt
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-
-# terminal 2
-cd apps/storefront
-npm install
-npm run dev
-```
-
-## Supabase status
-
-Target AACP project: `bborikhazomedjzihyiv` in organization **AACP Commerce** (Free). Project appeared healthy in the signed-in dashboard, but the Supabase connector in ChatGPT lacked write access on last check. Do not copy DB credentials into GitHub, Next.js browser settings, or Docker build args. Apply the SQL migrations only after privileged project access and review. The Docker demo operates without the database.
-
-## Production blockers
-
-No real supplier integration, payments, production auth-bound WebSocket subscriptions, Redis/pubsub cross-instance fanout, durable outbox consumer or validated cloud migrations yet. The current WebSocket is not a secure channel for private orders or customer information.
+## More details
+- Containers resolve each other by service DNS name, e.g. `api:8000`; browser JavaScript does **not** resolve that Docker DNS.
+- `NEXT_PUBLIC_*` URLs are embedded at build time and require a frontend image rebuild when changed.
+- Ports bind to `127.0.0.1` by default to prevent exposing the unfinished service on your LAN/Internet.
+- Public HTTPS deployments need WSS, real authentication and tenancy authorization. The current WebSocket is limited to development preview events.
+- See `docs/DEPLOYMENT.md` and `docs/SUPABASE_SETUP.md` for production prerequisites.

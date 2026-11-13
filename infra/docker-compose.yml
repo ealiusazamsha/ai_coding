@@ -1,5 +1,6 @@
-# Local Docker development preview: no payments, no supplier purchasing.
-# Supabase Cloud is external; no local PostgreSQL or Redis is required for the demo.
+# Local Docker development preview: no payments or supplier purchasing.
+# Host port 8001 avoids conflicts with existing local servers on port 8000.
+# Internal FastAPI port stays 8000. Browser-visible API/WS URLs are Next.js BUILD args.
 name: aacp
 services:
   api:
@@ -10,7 +11,7 @@ services:
       AACP_DEMO_MODE: "true"
       AACP_ALLOWED_ORIGINS: "${AACP_ALLOWED_ORIGINS:-http://localhost:3000}"
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${AACP_API_HOST_PORT:-8001}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
       interval: 15s
@@ -22,10 +23,10 @@ services:
     build:
       context: ../apps/storefront
       args:
-        NEXT_PUBLIC_API_BASE_URL: "${AACP_PUBLIC_API_URL:-http://localhost:8000}"
-        NEXT_PUBLIC_WS_URL: "${AACP_PUBLIC_WS_URL:-ws://localhost:8000/ws/v1/demo}"
+        NEXT_PUBLIC_API_BASE_URL: "${AACP_PUBLIC_API_URL:-http://localhost:8001}"
+        NEXT_PUBLIC_WS_URL: "${AACP_PUBLIC_WS_URL:-ws://localhost:8001/ws/v1/demo}"
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${AACP_WEB_HOST_PORT:-3000}:3000"
     depends_on:
       api:
         condition: service_healthy

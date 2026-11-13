@@ -29,7 +29,7 @@ infra/                   Deployment and secrets guidance
 .github/workflows/        Backend and frontend checks
 ```
 
-## Local Docker preview\n\n```powershell\ngit clone https://github.com/ealiusazamsha/ai_coding.git\ncd ai_coding\ndocker compose -f infra/docker-compose.yml up --build -d\n```\n\nThe browser demo WebSocket connects to `ws://localhost:8000/ws/v1/demo`; it does not represent real orders or payments.\n\n## Local development
+## Local Docker preview (API host port 8001 by default)\n\n```powershell\ngit clone https://github.com/ealiusazamsha/ai_coding.git\ncd ai_coding\ndocker compose -f infra/docker-compose.yml up --build -d\n```\n\nThe browser demo WebSocket connects to `ws://localhost:8001/ws/v1/demo`; it does not represent real orders or payments.\n\n## Local development
 Requirements: Python 3.12+, Node.js 22+.
 ```bash
 cd services/api
