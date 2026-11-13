@@ -1,24 +1,36 @@
 # AACP — Autonomous Agentic Commerce Platform
 
-**Status: runnable local development scaffold, not a production commerce system.**
+**Phase: development foundation / not production ready.** Python FastAPI backend, Next.js 16 storefront, dedicated Supabase Cloud PostgreSQL database design. Scope: supplier-fulfilled commerce in Bangladesh and approved international markets, with an extensible SaaS control plane later.
 
-Python FastAPI + Next.js + Supabase Cloud PostgreSQL. Designed for Bangladesh and approved international dropshipping markets. The initial version deliberately uses demo-only products and never captures payment or submits real supplier orders.
+## Implemented
+- Responsive light-theme storefront with catalog filtering/search, preview cart and interactive **deterministic demo assistant**.
+- Illustrative operations preview (no real merchant data), clear demo/production capability indicators.
+- FastAPI health/readiness/capabilities, typed catalog and quote APIs, owner-scoped order read/write API.
+- Supabase Auth access-token validation via trusted Auth endpoint.
+- Server-derived price quotes and supplier-stock freshness/margin/approval checks.
+- Idempotency-key and request fingerprint validation for creating **pending-payment** orders.
+- SQLAlchemy models, business audit/outbox writes, migration for a dedicated Supabase schema, defensive tenant foreign-key constraints.
+- Tests for API safety, policies and deterministic business rules; GitHub Actions for Python tests and Next.js build.
 
-## Project layout
-- `docs/SRS.md`: requirements, acceptance criteria, non-functional constraints.
-- `docs/PRS.md`: product scope, milestones and market decisions.
-- `docs/ARCHITECTURE.md`: service and agent architecture.
-- `docs/MEDIA.md`: product assets and private media policies.
-- `apps/storefront/`: accessible, light-theme Next.js storefront.
-- `services/api/`: Python FastAPI typed catalog API and read-only assistant.
-- `supabase/migrations/`: **dedicated AACP schema** for deployment to a new Supabase project.
-- `packages/contracts/`: versioned cross-service event contract.
-- `packages/design-tokens/`: color, typography, spacing specification.
-- `infra/`: local container instructions and configuration.
-- `media/`: source asset and licensing conventions.
+## Absolutely NOT implemented
+No connected Supabase Cloud AACP project, no live payment checkout or gateway verification, no real supplier purchase order submission or fulfillment, no external LLM agent orchestration, no worker delivery system or merchant-accessible admin dashboard. The preview basket never submits orders or stores card details. The product prices and stock are illustrative.
 
-## Run locally
-Backend (Python 3.12+):
+## Project structure
+```text
+apps/storefront/          Next.js responsive UI and operations preview
+services/api/app/         FastAPI + domain, models, auth, catalog, quotes and orders
+services/api/tests/       API and policy tests
+supabase/migrations/      Dedicated cloud database schema migrations
+packages/contracts/      Versioned event envelope contract
+packages/design-tokens/  Visual system design tokens
+media/                   Source and reviewed optimized media conventions
+docs/                    SRS, PRS, architecture, asset and database setup docs
+infra/                   Deployment and secrets guidance
+.github/workflows/        Backend and frontend checks
+```
+
+## Local development
+Requirements: Python 3.12+, Node.js 22+.
 ```bash
 cd services/api
 python -m venv .venv
@@ -27,20 +39,29 @@ pip install -r requirements-dev.txt
 uvicorn app.main:app --reload --port 8000
 pytest -q
 ```
-Windows activation: `.venv\Scripts\Activate.ps1`.
-
-Frontend (Node 20+):
+PowerShell virtual environment activation: `.venv\\Scripts\\Activate.ps1`.
+In another terminal:
 ```bash
 cd apps/storefront
 npm install
 npm run dev
 ```
-Open http://localhost:3000.
+Open http://localhost:3000. With no DB configured, the demo catalog appears; there is no checkout. For production connection use environment variables below and apply migrations.
 
-The backend displays harmless demo catalog items when `DATABASE_URL` is not configured; these are clearly marked as demonstration data. To use Supabase Cloud, create a **new dedicated Supabase project** (do not reuse CareerFlow/HCRE), apply the reviewed SQL migration from `supabase/migrations/`, and set `DATABASE_URL` in the backend's secret store. Never commit credentials. For persistent production deployments use a direct connection or session pooler, depending on IPv6/network support. For serverless use the documented transaction pooler settings.
+## Supabase Cloud connection
+**Do not deploy to the existing CareerFlow/Global Job Agent database.** Provision a fresh Supabase project approved for AACP. Run, in order:
+1. `supabase/migrations/202611130001_aacp_core.sql`
+2. `supabase/migrations/202611140001_aacp_commerce_extensions.sql`
 
-## Implementation remaining before live commerce
-Production auth and authorization; live supplier integration; verified payment provider; durable order workflow, transactional outbox, audit and idempotency; customer checkout; upload scanning; agent evaluation, observability and security testing. None is represented as complete.
+Set backend-only `DATABASE_URL`, `AACP_DEFAULT_TENANT_ID`, `SUPABASE_URL`, and `SUPABASE_PUBLISHABLE_KEY`. Set `AACP_DEMO_MODE=false` only after a dedicated DB and approved merchant setup exist. Never add service-role keys to browser code. Do not run migrations or seed example tenants into unrelated projects. See [Supabase setup](docs/SUPABASE_SETUP.md).
 
-## Safety
-This publicly accessible GitHub repository must never contain database passwords, Supabase service keys, payment tokens, customer data, raw uploaded invoices or proprietary supplier media.
+## Launch checklist
+- Select initial supplier and verify real stock/purchase-order API.
+- Approve legal merchant entity and payment acquiring/settlement.
+- Implement real payment checkout, signed provider callbacks and reconciliation.
+- Implement durable transaction outbox consumer and supplier adapter.
+- Configure Supabase Auth + operator access policies and storage permissions.
+- Run end-to-end integration, concurrency, security, recovery, and cost tests before any production purchase.
+
+## Documentation
+[Software requirements](docs/SRS.md) · [Product requirements](docs/PRS.md) · [Architecture](docs/ARCHITECTURE.md) · [Media](docs/MEDIA.md) · [Cloud database](docs/SUPABASE_SETUP.md).
