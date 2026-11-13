@@ -71,3 +71,32 @@ docker compose -f infra/docker-compose.yml ps
 - Ports bind to `127.0.0.1` by default to prevent exposing the unfinished service on your LAN/Internet.
 - Public HTTPS deployments need WSS, real authentication and tenancy authorization. The current WebSocket is limited to development preview events.
 - See `docs/DEPLOYMENT.md` and `docs/SUPABASE_SETUP.md` for production prerequisites.
+
+## WebSocket stays at "Connecting demo channel…"
+A healthy FastAPI HTTP endpoint is **not** sufficient to prove WebSocket protocol support. The API requires `uvicorn[standard]`, which includes the WebSocket protocol implementation. The API Dockerfile now checks that dependency and imports the FastAPI application during the build.
+
+To pull and rebuild **only the API** after this fix:
+
+```powershell
+git pull origin main
+docker compose -f infra/docker-compose.yml up --build -d api
+docker compose -f infra/docker-compose.yml up -d storefront
+docker compose -f infra/docker-compose.yml ps
+docker compose -f infra/docker-compose.yml logs --tail=80 api
+```
+
+Refresh http://localhost:3000 with Ctrl+F5. The indicator should show `Demo WebSocket connected` when the API sends its `system.connected` message.
+
+If it is still connecting, inspect Chrome DevTools → Network → WS, or use this read-only browser-console probe from the storefront page:
+
+```javascript
+const ws = new WebSocket("ws://localhost:8001/ws/v1/demo");
+ws.onmessage = (event) => console.log("AACP socket message:", event.data);
+ws.onopen = () => console.log("AACP socket opened");
+ws.onerror = (event) => console.error("AACP socket error", event);
+ws.onclose = (event) => console.log("AACP socket closed", event.code, event.reason);
+```
+
+If you see a 403, check the browser origin (`http://localhost:3000`) against `AACP_ALLOWED_ORIGINS`. If the Network panel shows a connection to port 8000 instead of 8001, ensure the storefront image was rebuilt with the updated Next.js build args. Use `docker compose -f infra/docker-compose.yml up --build -d` in that case.
+
+**No production/private order WebSocket authorization is implemented.** This test channel must remain local and in development mode.
