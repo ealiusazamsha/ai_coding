@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, CheckCircle2, LockKeyhole, LogOut, MessageCircle, Package } from "lucide-react";
 import "./account.css";
 
@@ -11,6 +11,7 @@ type Ticket = { id: string; subject: string; message: string; status: string; cr
 const api = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001";
 const sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://bborikhazomedjzihyiv.supabase.co";
 const sbKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+const customerWs = (process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8001/ws/v1/demo").replace(/\/ws\/v1\/demo$/, "/ws/v1/customer");
 
 async function accountRequest<T>(path: string, token: string, init?: RequestInit): Promise<T> {
   const result = await fetch(api + "/api/v1" + path, {
@@ -29,6 +30,8 @@ export default function AccountPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState("");
+  const [channel, setChannel] = useState("offline");
+  const socket = useRef<WebSocket | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [cases, setCases] = useState<Ticket[]>([]);
   const [subject, setSubject] = useState("");
@@ -45,6 +48,52 @@ export default function AccountPage() {
       .catch(() => { if (!controller.signal.aborted) setMode("offline"); });
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    if (!token || mode !== "database") return;
+    let disposed = false;
+    let heartbeat: ReturnType<typeof setInterval> | undefined;
+    setChannel("connecting");
+    const ws = new WebSocket(customerWs);
+    socket.current = ws;
+    ws.onopen = () => {
+      if (disposed) return;
+      ws.send(JSON.stringify({ type: "auth", access_token: token }));
+    };
+    ws.onmessage = (event: MessageEvent<string>) => {
+      try {
+        const message = JSON.parse(event.data) as {
+          type: string; data?: { order_id?: string; id?: string; status?: string; updated_at?: string };
+        };
+        if (message.type === "auth.ok") {
+          setChannel("connected");
+          heartbeat = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "ping" }));
+          }, 30000);
+        } else if (message.type === "order.snapshot" && message.data?.order_id) {
+          setOrders(previous => previous.map(o => o.order_id === message.data?.order_id
+            ? { ...o, status: message.data?.status || o.status } : o));
+        } else if (message.type === "support.snapshot" && message.data?.id) {
+          setCases(previous => previous.map(c => c.id === message.data?.id
+            ? { ...c, status: message.data?.status || c.status } : c));
+        }
+      } catch { /* Only known, parsed message types are used. */ }
+    };
+    ws.onerror = () => ws.close();
+    ws.onclose = () => { if (!disposed) setChannel("offline"); };
+    return () => {
+      disposed = true;
+      if (heartbeat !== undefined) clearInterval(heartbeat);
+      ws.close();
+      socket.current = null;
+    };
+  }, [token, mode]);
+
+  function requestSnapshot(type: "order.snapshot" | "support.snapshot", id: string) {
+    if (socket.current?.readyState === WebSocket.OPEN && channel === "connected") {
+      socket.current.send(JSON.stringify({ type, id }));
+    }
+  }
 
   async function load(t: string) {
     const [nextOrders, nextCases] = await Promise.all([
@@ -84,7 +133,7 @@ export default function AccountPage() {
   }
 
   function logout() {
-    setToken(""); setPassword(""); setCases([]); setOrders([]);
+    setToken(""); setPassword(""); setCases([]); setOrders([]); setChannel("offline");
     setNotice("Signed out. Session token cleared from memory.");
   }
 
@@ -116,13 +165,13 @@ export default function AccountPage() {
       <p className="account-small">Your credentials are sent directly to Supabase Auth, not to the AACP application server. This demo holds your session token in memory only.</p>
     </section>}
     {token && <div className="account-content">
-      <div className="account-session"><span><CheckCircle2 size={18}/> Signed in</span><button onClick={logout}><LogOut size={16}/> Sign out</button></div>
+      <div className="account-session"><span><CheckCircle2 size={18}/> Signed in · Private channel: {channel}</span><button onClick={logout}><LogOut size={16}/> Sign out</button></div>
       <section className="account-panel">
         <h2><Package size={20}/> My orders</h2>
         {orders.length === 0 ? <p className="muted">No orders have been created for this account. Live checkout remains disabled.</p>
           : orders.map(o => <div key={o.order_id} className="account-record">
             <div><b>Order #{o.order_id.slice(0,8)}</b><small>{o.status}</small></div>
-            <strong>{new Intl.NumberFormat("en-BD",{style:"currency", currency:o.currency}).format(o.total_minor/100)}</strong>
+            <div className="account-record-side"><strong>{new Intl.NumberFormat("en-BD",{style:"currency", currency:o.currency}).format(o.total_minor/100)}</strong><button disabled={channel !== "connected"} onClick={() => requestSnapshot("order.snapshot", o.order_id)}>Check status</button></div>
           </div>)}
       </section>
       <section className="account-panel">
@@ -134,7 +183,7 @@ export default function AccountPage() {
         </form>
         <div className="account-records">{cases.map(item => <article className="account-record" key={item.id}>
           <div><b>{item.subject}</b><small>{new Date(item.created_at).toLocaleString()}</small><p>{item.message}</p></div>
-          <span className="account-status">{item.status}</span>
+          <div className="account-record-side"><span className="account-status">{item.status}</span><button disabled={channel !== "connected"} onClick={() => requestSnapshot("support.snapshot", item.id)}>Check status</button></div>
         </article>)}</div>
       </section>
     </div>}

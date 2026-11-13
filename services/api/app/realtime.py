@@ -118,8 +118,14 @@ async def authenticated_customer_ws(ws: WebSocket):
         del token
         await ws.send_json({"type": "auth.ok", "mode": "customer", "version": 1})
 
+        # Limit a verified-token socket to at most 15 minutes; require re-authentication.
+        deadline = asyncio.get_running_loop().time() + 900
         for _ in range(100):
-            text = await ws.receive_text()
+            remaining = deadline - asyncio.get_running_loop().time()
+            if remaining <= 0:
+                await ws.close(code=1008)
+                return
+            text = await asyncio.wait_for(ws.receive_text(), timeout=remaining)
             if len(text.encode("utf-8")) > 2048:
                 await ws.close(code=1009)
                 return
