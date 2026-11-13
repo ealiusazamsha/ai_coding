@@ -133,3 +133,15 @@ class OutboxEvent(Base):
     payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+class SupportCase(Base):
+    __tablename__ = "support_cases"
+    __table_args__ = {"schema": "aacp"}
+    id: Mapped[UUID] = uid()
+    tenant_id: Mapped[UUID] = mapped_column(Uuid, ForeignKey("aacp.tenants.id"), nullable=False)
+    customer_user_id: Mapped[UUID] = mapped_column(Uuid, nullable=False)
+    subject: Mapped[str] = mapped_column(Text, nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="open")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
