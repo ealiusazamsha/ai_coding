@@ -7,10 +7,11 @@ from .config import settings
 from .realtime import router as realtime_router
 from .admin import router as admin_router
 from .support import router as support_router
+from .assistant import catalog_answer
 from .database import get_db
 from .security import current_user
 from .demo import PRODUCTS
-from .commerce import listing, quote, create_pending_order, owned_order, owned_orders
+from .commerce import listing, quote, create_pending_order, owned_order, owned_orders, catalog_product
 from .schemas import ProductOut, QuoteRequest, QuoteResponse, OrderRequest, OrderOut, AssistantRequest, AssistantResponse
 
 config = settings()
@@ -64,7 +65,7 @@ def product(product_id: str, db: Session | None = Depends(optional_catalog_db)):
     if config.demo_mode:
         item = next((p for p in PRODUCTS if p.id == product_id), None)
     else:
-        item = next((p for p in listing(db) if p.id == product_id), None)
+        item = catalog_product(db, product_id)
     if not item:
         raise HTTPException(status_code=404, detail="Product not found")
     return item
@@ -99,6 +100,13 @@ def get_order(order_id: UUID, user: UUID = Depends(current_user),
 @app.post("/api/v1/checkout", status_code=503)
 def checkout_disabled():
     raise HTTPException(status_code=503, detail="Checkout disabled until verified payment provider is configured")
+
+@app.post("/api/v1/assistant/catalog", response_model=AssistantResponse)
+def catalog_assistant(request: AssistantRequest, db: Session | None = Depends(optional_catalog_db)):
+    if config.demo_mode:
+        raise HTTPException(status_code=503, detail="Database catalog assistant is disabled in demo mode")
+    return catalog_answer(db, request.question)
+
 
 @app.post("/api/v1/assistant/demo", response_model=AssistantResponse)
 def assistant(request: AssistantRequest):

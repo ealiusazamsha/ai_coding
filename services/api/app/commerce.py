@@ -132,3 +132,33 @@ def owned_orders(db: Session, user_id: UUID) -> list[OrderOut]:
     ).order_by(Order.created_at.desc()).limit(100)).all()
     return [OrderOut(order_id=o.id, status=o.status, currency=o.currency,
                      total_minor=o.total_minor) for o in rows]
+
+def catalog_product(db: Session, product_id: str) -> ProductOut | None:
+    """Direct ID lookup, independent of the catalog pagination limit."""
+    try:
+        uid = UUID(product_id)
+    except ValueError:
+        return None
+    tenant = settings().tenant_id
+    product = db.scalar(select(Product).where(
+        Product.id == uid, Product.tenant_id == tenant, Product.status == "active"))
+    if not product:
+        return None
+    offers = db.execute(
+        select(SupplierOffer, Supplier)
+        .join(Supplier, (Supplier.id == SupplierOffer.supplier_id) &
+              (Supplier.tenant_id == tenant))
+        .where(SupplierOffer.tenant_id == tenant,
+               SupplierOffer.product_id == product.id,
+               SupplierOffer.source_verified.is_(True))
+    ).all()
+    in_stock = product.sale_price_minor > 0 and any(
+        offer.currency == product.currency and
+        offer_eligible(offer.quantity, 1, offer.synced_at, supplier.approved,
+                       offer.unit_cost_minor, product.sale_price_minor)
+        for offer, supplier in offers)
+    return ProductOut(
+        id=str(product.id), name=product.name, description=product.description,
+        category=product.category, price_minor=product.sale_price_minor,
+        currency=product.currency, in_stock=bool(in_stock), emoji="🛍️",
+    )
