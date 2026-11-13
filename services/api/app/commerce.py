@@ -41,7 +41,7 @@ def quote(db: Session, request: QuoteRequest) -> QuoteResponse:
             .where(SupplierOffer.product_id == product.id, SupplierOffer.tenant_id == tenant)
         ).all()
         eligible = any(
-            offer.currency == product.currency and offer_eligible(
+            offer.source_verified and offer.currency == product.currency and offer_eligible(
                 offer.quantity, line.quantity, offer.synced_at, supplier.approved,
                 offer.unit_cost_minor, product.sale_price_minor)
             for offer, supplier in offers

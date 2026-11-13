@@ -124,6 +124,14 @@ def log_event(db: Session, user: UUID, action: str, resource: str, resource_id: 
     ))
 
 
+def flush_or_conflict(db: Session) -> None:
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Conflict with existing merchant record")
+
+
 def save(db: Session) -> None:
     try:
         db.commit()
@@ -172,7 +180,7 @@ def suppliers(_user: UUID = Depends(current_operator), db: Session = Depends(get
 def create_supplier(payload: SupplierCreate, user: UUID = Depends(current_operator), db: Session = Depends(get_db)):
     obj = Supplier(tenant_id=tenant(), name=payload.name.strip(), integration_type=payload.integration_type, approved=False)
     db.add(obj)
-    db.flush()
+    flush_or_conflict(db)
     log_event(db, user, "supplier.created", "supplier", obj.id)
     save(db)
     db.refresh(obj)
@@ -203,7 +211,7 @@ def create_product(payload: ProductCreate, user: UUID = Depends(current_operator
         status="draft", sale_price_minor=payload.sale_price_minor, currency=payload.currency,
     )
     db.add(obj)
-    db.flush()
+    flush_or_conflict(db)
     log_event(db, user, "product.created", "product", obj.id)
     save(db)
     db.refresh(obj)
@@ -262,7 +270,7 @@ def add_manual_offer(payload: OfferUpsert, user: UUID = Depends(current_operator
         existing.quantity = payload.quantity
         existing.synced_at = datetime.now(timezone.utc)
         existing.source_verified = False  # operator edits invalidate upstream verification
-    db.flush()
+    flush_or_conflict(db)
     log_event(db, user, "supplier.offer.manually_recorded", "supplier_offer", existing.id)
     save(db)
     db.refresh(existing)

@@ -58,6 +58,9 @@ class SupplierOffer(Base):
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     synced_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    source_reference: Mapped[str | None] = mapped_column(Text)
+    source_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 class Order(Base):
     __tablename__ = "orders"
