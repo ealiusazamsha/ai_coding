@@ -1,38 +1,36 @@
 # Supabase Cloud connection for AACP
 
-## Selected project (provided by user, awaiting access)
-- Public API URL: `https://bborikhazomedjzihyiv.supabase.co`
-- Project reference: `bborikhazomedjzihyiv`
-- Project dashboard: https://supabase.com/dashboard/project/bborikhazomedjzihyiv
-- Status (2026-11-14): **not accessible through the currently connected Supabase integration**. Project details and ownership are therefore not yet verified. Supabase returned a permission-denied error when attempting project lookup. **No migrations have been applied.**
+## Verified project identity (browser read-only view, 2026-11-14)
+- **Organization:** AACP Commerce (Free); organization ID `mofxvnsmwyhparhesykz`
+- **Project display name:** ealiusazamsha's Project
+- **Project reference:** `bborikhazomedjzihyiv`
+- **Project API URL:** https://bborikhazomedjzihyiv.supabase.co
+- **Dashboard:** https://supabase.com/dashboard/project/bborikhazomedjzihyiv
+- **Database region:** Tokyo, `ap-northeast-1`
+- **Dashboard health indicator:** Healthy
+- **GitHub integration displayed:** `ealiusazamsha/ai_coding`
+- **Last migration indicator:** No migrations at time of dashboard inspection.
 
-The currently connected account can see only the `Global Job Agent` organization and its existing CareerFlow/job_agent database. Do not migrate AACP tables into that other project.
+**Important distinction:** The dashboard is accessible to the browser session, but the Supabase plugin connected to this ChatGPT conversation is **not authorized** for organization `mofxvnsmwyhparhesykz` or the selected project. The plugin reports **You do not have permission to perform this action**, and `list_projects` only shows the unrelated Global Job Agent/CareerFlow project. Thus the AACP schema has **not been applied or verified** from this conversation. Browser tab read access does not confer database write access.
 
-## Grant appropriate connector access
-1. Sign in to Supabase in your browser and ensure the target project is accessible in the dashboard: https://supabase.com/dashboard/project/bborikhazomedjzihyiv.
-2. In ChatGPT **Settings → Plugins**, open the Supabase connection and reconnect or authorize the account that belongs to the target project's organization, granting project access as appropriate.
-3. If the project is owned by a different Supabase user, authorize the correct account or invite the connected account with the necessary access.
-4. Retry `list_projects` and `get_project` to validate that the target is available before making any database changes.
-5. Do not send Supabase database passwords, service-role keys, access tokens or payment credentials through chat or GitHub source control.
+## Grant connector access for AACP
+1. Open **ChatGPT → Settings → Plugins → Supabase** and reconnect/reauthorize it to the Supabase account with membership in **AACP Commerce**.
+2. Ensure the OAuth/project access scope includes the specific project `bborikhazomedjzihyiv`; the browser being signed in is not sufficient.
+3. Retry Supabase `list_organizations`, `list_projects`, and `get_project`. Confirm `AACP Commerce` and `bborikhazomedjzihyiv` appear **before changing any database**.
+4. Do **not** send database passwords, service-role keys or access tokens through chat or GitHub source.
 
-## Apply migrations after authorization
-1. Verify target project name, organization, region and database health.
-2. Ensure it is a **dedicated AACP project** with no unrelated production application data.
-3. Inspect existing tables/schemas and migration history to avoid collisions.
-4. Apply in order:
+## Deployment sequence after authorization
+1. Inspect existing schemas, tables and migration history; stop if unrelated application data is present.
+2. Apply in order to this dedicated AACP project:
    - `supabase/migrations/202611130001_aacp_core.sql`
    - `supabase/migrations/202611140001_aacp_commerce_extensions.sql`
-5. Verify `aacp` schema and tables, RLS, grants, indexes, foreign keys, and Supabase security advisors.
-6. Create one AACP tenant and securely configure its UUID as `AACP_DEFAULT_TENANT_ID` in the backend.
-7. Obtain the real `DATABASE_URL` from the project's **Connect** dialog. Use `postgresql+psycopg` format for SQLAlchemy with SSL. Do not guess a pooler host, username or password.
-8. Set `SUPABASE_URL=https://bborikhazomedjzihyiv.supabase.co`, `SUPABASE_PUBLISHABLE_KEY`, `AACP_DEFAULT_TENANT_ID`, and `DATABASE_URL` via backend secret configuration.
-9. Validate GET `/ready` and database-backed API queries using an approved staging environment.
-10. Keep payments, supplier procurement and real AI tool execution disabled until their separate security and integration acceptance tests pass.
+3. Check `aacp` schema tables, tenant-scoped foreign keys, RLS, grants and indexes; run Supabase security advisors.
+4. Create a dedicated merchant tenant and store its UUID as `AACP_DEFAULT_TENANT_ID` on the backend; do not expose private schema to anon/authenticated.
+5. Configure backend-only `DATABASE_URL`, `SUPABASE_URL=https://bborikhazomedjzihyiv.supabase.co` and `SUPABASE_PUBLISHABLE_KEY` via secret storage. Obtain actual connection URL from the dashboard's Connect dialog, never guess a host.
+6. Run authenticated FastAPI staging checks, backend /ready and database-backed quote/order tests.
+7. Keep real payment capture, supplier procurement and autonomous agent write tools disabled until external integrations, approvals and replay tests are complete.
 
-## Isolation and security
-The `aacp` schema is intended to be private; currently no anonymous/authenticated Data API permissions should be granted. RLS is defense in depth, not a substitute for authorized service roles and tenant-aware business logic. Never expose privileged Supabase keys in `NEXT_PUBLIC_*` environment variables.
+## Isolation
+The existing Global Job Agent/CareerFlow project is not the AACP target and must not be changed. `aacp` is a private schema with defensive RLS and no client-role grants by default. All backend queries must also enforce trusted tenant context and user ownership.
 
-## Connection modes
-For a persistent FastAPI deployment, use a direct or session-pooler connection as supported by the deployment network; for serverless choose a supported transaction pooler with appropriate driver configuration. Store credentials in a secret manager and enable appropriate certificate verification.
-
-Official documentation: https://supabase.com/docs/guides/database/connecting-to-postgres and https://supabase.com/docs/guides/database/secure-data
+Official resources: https://supabase.com/docs/guides/database/connecting-to-postgres and https://supabase.com/docs/guides/database/secure-data
