@@ -1,67 +1,93 @@
 # AACP — Autonomous Agentic Commerce Platform
 
-**Phase: development foundation / not production ready.** Python FastAPI backend, Next.js 16 storefront, dedicated Supabase Cloud PostgreSQL database design. Scope: supplier-fulfilled commerce in Bangladesh and approved international markets, with an extensible SaaS control plane later.
+**Development release | Not production-ready**
 
-## Development workflow\nCode is authored here in ChatGPT, committed to GitHub, then pulled locally and run through Docker Compose. No Codex requirement. See [Local Docker + WebSocket runbook](docs/LOCAL_DOCKER.md) and [Workflow](docs/WORKFLOW.md).\n\n## Implemented
-- Responsive light-theme storefront with catalog filtering/search, preview cart and interactive **deterministic demo assistant**.
-- Illustrative operations preview (no real merchant data), clear demo/production capability indicators.
-- FastAPI health/readiness/capabilities, typed catalog and quote APIs, owner-scoped order read/write API.
-- Supabase Auth access-token validation via trusted Auth endpoint.
-- Server-derived price quotes and supplier-stock freshness/margin/approval checks.
-- Idempotency-key and request fingerprint validation for creating **pending-payment** orders.
-- SQLAlchemy models, business audit/outbox writes, migration for a dedicated Supabase schema, defensive tenant foreign-key constraints.
-- Tests for API safety, policies and deterministic business rules; GitHub Actions for Python tests and Next.js build.
+AACP is a supplier-fulfilled commerce platform, initially serving Bangladesh and approved international corridors, with future tenant-isolated SaaS capabilities.
 
-## Absolutely NOT implemented
-No connected Supabase Cloud AACP project, no live payment checkout or gateway verification, no real supplier purchase order submission or fulfillment, no external LLM agent orchestration, no worker delivery system or merchant-accessible admin dashboard. The preview basket never submits orders or stores card details. The product prices and stock are illustrative.
+## Technology
 
-## Project structure
-```text
-apps/storefront/          Next.js responsive UI and operations preview
-services/api/app/         FastAPI + domain, models, auth, catalog, quotes and orders
-services/api/tests/       API and policy tests
-supabase/migrations/      Dedicated cloud database schema migrations
-packages/contracts/      Versioned event envelope contract
-packages/design-tokens/  Visual system design tokens
-media/                   Source and reviewed optimized media conventions
-docs/                    SRS, PRS, architecture, asset and database setup docs
-infra/                   Deployment and secrets guidance
-.github/workflows/        Backend and frontend checks
+- **Frontend:** Next.js + React + TypeScript, responsive light-theme UI.
+- **Backend:** Python 3.12 / FastAPI / SQLAlchemy, REST and WebSocket.
+- **Database target:** dedicated Supabase Cloud PostgreSQL project `bborikhazomedjzihyiv` in AACP Commerce.
+- **Local deployment:** Docker Compose, port `3000` storefront / `8001` API.
+- **Workflow:** Build here in ChatGPT → GitHub `main` → pull locally → Docker build + test. No Codex required.
+
+## Features in source
+
+| Module | Implementation | Availability |
+|---|---|---|
+| Catalog, search, categories | Next.js and FastAPI | Demo available; database mode pending migration |
+| Product details, stock labels | Next.js and direct API lookup | Stock shown only when source-verified |
+| Preview cart | Client-side interactive UI | No checkout or payment |
+| Demo shopping assistant | Deterministic sample catalog | Available in demo |
+| Grounded database assistant | Tenant-scoped published listings | Database mode only; not an external LLM |
+| Operations / merchant administration | Product drafts, publishing, supplier approval, manual offers | Authenticated operators, database mode |
+| Customer account | Supabase Auth login, own order history, support cases | Database mode only |
+| Merchant support queue | Case status and audit records | Database mode only |
+| Order creation, idempotency | Pending-payment records with stock checks | Database mode; no payment captured |
+| Demo WebSocket | Public heartbeat, no private data | Demo mode only |
+| Customer WebSocket | Token authentication and owner-scoped on-demand status snapshots | Database mode; not durable push/fanout |
+| Auditing and outbox | Persist events for supported writes | Dispatcher and external delivery pending |
+| Supplier stock provenance | Manual offers never verified | Requires real supplier adapter for verified stock |
+
+Do not treat **registered API routes** as proof of successful cloud integration. The user previously verified the original Docker demo as healthy; newer feature code still requires local build and tests.
+
+## Quick start — Windows PowerShell
+
+```powershell
+git clone https://github.com/ealiusazamsha/ai_coding.git
+cd ai_coding
+
+# Isolated backend unit and SQLite integration tests
+docker build --target tests --progress=plain -t aacp-api-tests ./services/api
+
+# Run demo containers (no DB credentials needed)
+docker compose -f infra/docker-compose.yml up --build -d
+docker compose -f infra/docker-compose.yml ps
+
+# HTTP smoke checks
+powershell -ExecutionPolicy Bypass -File scripts/verify-local.ps1
 ```
 
-## Local Docker preview (API host port 8001 by default)\n\n```powershell\ngit clone https://github.com/ealiusazamsha/ai_coding.git\ncd ai_coding\ndocker compose -f infra/docker-compose.yml up --build -d\n```\n\nThe browser demo WebSocket connects to `ws://localhost:8001/ws/v1/demo`; it does not represent real orders or payments.\n\n## Local development
-Requirements: Python 3.12+, Node.js 22+.
-```bash
-cd services/api
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-uvicorn app.main:app --reload --port 8000
-pytest -q
-```
-PowerShell virtual environment activation: `.venv\\Scripts\\Activate.ps1`.
-In another terminal:
-```bash
-cd apps/storefront
-npm install
-npm run dev
-```
-Open http://localhost:3000. With no DB configured, the demo catalog appears; there is no checkout. For production connection use environment variables below and apply migrations.
+Open:
+- Storefront: http://localhost:3000
+- API docs: http://localhost:8001/docs
+- Merchant preview: http://localhost:3000/operations
+- Customer preview: http://localhost:3000/account
 
-## Supabase Cloud connection
-**Do not deploy to the existing CareerFlow/Global Job Agent database.** Provision a fresh Supabase project approved for AACP. Run, in order:
+The bottom-left indicator should show **Demo WebSocket connected** in demo mode. The browser does not use WebSocket to connect directly to PostgreSQL.
+
+For later updates, run `git pull origin main` then rebuild. Your private `.env` files remain local and must not be committed.
+
+## Cloud database activation
+
+The Supabase project exists but this ChatGPT conversation **does not have an authorized database connection**, so **no migrations have been run here**. Read [Supabase setup](docs/SUPABASE_SETUP.md) before proceeding.
+
+Apply these four migration files, **in order and only to the AACP project**:
+
 1. `supabase/migrations/202611130001_aacp_core.sql`
 2. `supabase/migrations/202611140001_aacp_commerce_extensions.sql`
+3. `supabase/migrations/202611140002_aacp_supplier_provenance.sql`
+4. `supabase/migrations/202611140003_aacp_support_cases.sql`
 
-Set backend-only `DATABASE_URL`, `AACP_DEFAULT_TENANT_ID`, `SUPABASE_URL`, and `SUPABASE_PUBLISHABLE_KEY`. Set `AACP_DEMO_MODE=false` only after a dedicated DB and approved merchant setup exist. Never add service-role keys to browser code. Do not run migrations or seed example tenants into unrelated projects. See [Supabase setup](docs/SUPABASE_SETUP.md).
+Then provision a tenant and an authenticated operator, configure backend-only PostgreSQL credentials in `services/api/.env`, configure the public publishable key in `infra/.env`, and explicitly set `AACP_DEMO_MODE=false`.
 
-## Launch checklist
-- Select initial supplier and verify real stock/purchase-order API.
-- Approve legal merchant entity and payment acquiring/settlement.
-- Implement real payment checkout, signed provider callbacks and reconciliation.
-- Implement durable transaction outbox consumer and supplier adapter.
-- Configure Supabase Auth + operator access policies and storage permissions.
-- Run end-to-end integration, concurrency, security, recovery, and cost tests before any production purchase.
+**Never migrate into the unrelated CareerFlow / Global Job Agent project.**
+
+## Major unfinished production capabilities
+
+- A legally eligible and approved payment provider, signed verified webhooks, actual checkout, reconciliation and refunds.
+- Real supplier API integration, authorized procurement, verified stock sources and shipment/courier tracking.
+- Durable event workers, email/SMS delivery, idempotent retries, dead-letter handling and multi-instance realtime fanout.
+- Autonomous AI agents with real LLM integration, permissioned tools, budgets, human approvals and audit.
+- Product variants, real licensed media, customer policies, tax/customs and return flows.
+- Multitenant self-service SaaS subscription/billing, recovery, monitoring and production security review.
+
+**Keep all actual payment collection, procurement and automatic refunds disabled until independently verified and approved.**
 
 ## Documentation
-[Software requirements](docs/SRS.md) · [Product requirements](docs/PRS.md) · [Architecture](docs/ARCHITECTURE.md) · [Media](docs/MEDIA.md) · [Cloud database](docs/SUPABASE_SETUP.md).
+
+- [Product requirements](docs/PRS.md) · [Software requirements](docs/SRS.md)
+- [Architecture](docs/ARCHITECTURE.md) · [Implementation status](docs/IMPLEMENTATION_STATUS.md)
+- [Local Docker and WebSocket](docs/LOCAL_DOCKER.md) · [Local tests](docs/LOCAL_TESTING.md)
+- [Supabase setup](docs/SUPABASE_SETUP.md) · [Deployment gates](docs/DEPLOYMENT.md)

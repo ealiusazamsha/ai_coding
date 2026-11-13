@@ -4,7 +4,7 @@
 
 | Area | Implemented in source | Verified evidence / blockers |
 |---|---|---|
-| UI storefront, demo catalog/cart | Yes | User confirmed localhost:3000, container healthy |
+| UI storefront, product details, demo catalog/cart | Yes | User confirmed original localhost:3000 baseline healthy; new feature build pending |
 | Python FastAPI, REST and WebSocket demo | Yes | User confirmed API healthy and demo WebSocket connected |
 | Port 8001 Docker Compose config | Yes | User confirmed container health |
 | AACP Cloud project identity | Yes, browser-verified | Healthy Tokyo region, Free organization |
@@ -15,15 +15,15 @@
 | Backend auth via Supabase Auth /user | Yes | Live auth integration pending |
 | Merchant access allowlist | Yes | Requires operator UUID and backend env |
 | Customer-owned orders | Yes | SQLite/local tests pending new code validation |
-| Customer support cases | Yes | Backend and /account source; cloud integration pending |
+| Customer support cases | Yes | Backend, account page and merchant support queue; cloud integration pending |
 | Merchant support queue and audit/outbox records | Yes | Database and UI integration tests pending |
-| AI agent orchestration | No | Deterministic demo assistant only |
+| AI agent orchestration | No | Deterministic demo and grounded catalog advisor only; no external model/tool execution |
 | Payment gateway, verified callbacks and refunds | No | Requires merchant approval and provider selection |
 | Supplier order submission and courier integration | No | Requires approved suppliers/contracts/credentials |
 | Durable outbox dispatch, retries and notification delivery | No | Only transactional outbox persistence model |
-| Production auth-bound WebSocket and multi-instance fanout | No | Demo channel only |
+| Production multi-instance WebSocket event fanout | No | Authenticated on-demand customer status snapshots added; durable event push not built |
 | Multitenant SaaS billing and subscriptions | No | Schema isolation groundwork only |
-| CI workflow execution | Configured but **failing** | GitHub job details unavailable; don't assert tests pass |
+| CI workflow execution | Configured but **failing** | GitHub job details unavailable; isolated Docker pytest build stage added but unverified |
 | Production release | No | Requires end-to-end tests, security/compliance and external integrations |
 
 ## Local verification commands
