@@ -1,23 +1,38 @@
-# Supabase Cloud connection
+# Supabase Cloud connection for AACP
 
-## Current state
-One connected organization appears as **Global Job Agent**. The available Supabase project hosts existing CareerFlow / job_agent tables. AACP migrations have **not** been applied to it.
+## Selected project (provided by user, awaiting access)
+- Public API URL: `https://bborikhazomedjzihyiv.supabase.co`
+- Project reference: `bborikhazomedjzihyiv`
+- Project dashboard: https://supabase.com/dashboard/project/bborikhazomedjzihyiv
+- Status (2026-11-14): **not accessible through the currently connected Supabase integration**. Project details and ownership are therefore not yet verified. Supabase returned a permission-denied error when attempting project lookup. **No migrations have been applied.**
 
-A new independent project requires explicit organization selection and any applicable cost approval before provisioning. The current quoted project charge was $0/month, but billing/usage may change.
+The currently connected account can see only the `Global Job Agent` organization and its existing CareerFlow/job_agent database. Do not migrate AACP tables into that other project.
 
-## Recommended approach
-1. Select the Supabase organization, region, and appropriate merchant-data residency.
-2. Provision new project `aacp-commerce`. Do not reuse existing CareerFlow database.
-3. In the new project's SQL editor or migration tooling apply the migration files in chronological order.
-4. Create a tenant row in `aacp.tenants` and configure its UUID as `AACP_DEFAULT_TENANT_ID` on the backend (never from untrusted request input).
-5. Import only approved supplier offers with legitimate stock timestamps, approved supplier records, and active products.
-6. Copy the actual **connection URL** from the new project's Connect dialog. Use `postgresql+psycopg://...` for SQLAlchemy, with SSL enforced; do not guess pooler hostnames.
-7. Set backend secrets `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` via secret management; frontend needs only `NEXT_PUBLIC_API_BASE_URL`.
-8. Keep schema `aacp` out of Data API exposure until scoped policies and explicit grants have been reviewed. RLS enabled for all tables; currently no anonymous/authenticated access.
-9. Verify via GET /ready and trusted SQL queries; inspect Supabase advisors and test backups/restores.
-10. Activate payment and supplier adapters only after testing idempotency and callbacks.
+## Grant appropriate connector access
+1. Sign in to Supabase in your browser and ensure the target project is accessible in the dashboard: https://supabase.com/dashboard/project/bborikhazomedjzihyiv.
+2. In ChatGPT **Settings → Plugins**, open the Supabase connection and reconnect or authorize the account that belongs to the target project's organization, granting project access as appropriate.
+3. If the project is owned by a different Supabase user, authorize the correct account or invite the connected account with the necessary access.
+4. Retry `list_projects` and `get_project` to validate that the target is available before making any database changes.
+5. Do not send Supabase database passwords, service-role keys, access tokens or payment credentials through chat or GitHub source control.
+
+## Apply migrations after authorization
+1. Verify target project name, organization, region and database health.
+2. Ensure it is a **dedicated AACP project** with no unrelated production application data.
+3. Inspect existing tables/schemas and migration history to avoid collisions.
+4. Apply in order:
+   - `supabase/migrations/202611130001_aacp_core.sql`
+   - `supabase/migrations/202611140001_aacp_commerce_extensions.sql`
+5. Verify `aacp` schema and tables, RLS, grants, indexes, foreign keys, and Supabase security advisors.
+6. Create one AACP tenant and securely configure its UUID as `AACP_DEFAULT_TENANT_ID` in the backend.
+7. Obtain the real `DATABASE_URL` from the project's **Connect** dialog. Use `postgresql+psycopg` format for SQLAlchemy with SSL. Do not guess a pooler host, username or password.
+8. Set `SUPABASE_URL=https://bborikhazomedjzihyiv.supabase.co`, `SUPABASE_PUBLISHABLE_KEY`, `AACP_DEFAULT_TENANT_ID`, and `DATABASE_URL` via backend secret configuration.
+9. Validate GET `/ready` and database-backed API queries using an approved staging environment.
+10. Keep payments, supplier procurement and real AI tool execution disabled until their separate security and integration acceptance tests pass.
+
+## Isolation and security
+The `aacp` schema is intended to be private; currently no anonymous/authenticated Data API permissions should be granted. RLS is defense in depth, not a substitute for authorized service roles and tenant-aware business logic. Never expose privileged Supabase keys in `NEXT_PUBLIC_*` environment variables.
 
 ## Connection modes
-Persistent FastAPI services: direct or session pooler, depending on IPv6 availability. Stateless/serverless: carefully configured transaction pooler. Supabase direct server credentials must not be included in browser assets or GitHub commits. Authentication is verified against Supabase Auth's /auth/v1/user endpoint.
+For a persistent FastAPI deployment, use a direct or session-pooler connection as supported by the deployment network; for serverless choose a supported transaction pooler with appropriate driver configuration. Store credentials in a secret manager and enable appropriate certificate verification.
 
-Documentation: https://supabase.com/docs/guides/database/connecting-to-postgres and https://supabase.com/docs/guides/database/secure-data
+Official documentation: https://supabase.com/docs/guides/database/connecting-to-postgres and https://supabase.com/docs/guides/database/secure-data
