@@ -1,0 +1,14 @@
+node_modules/
+.next/
+__pycache__/
+.pytest_cache/
+.venv/
+.env
+.env.*
+!.env.example
+*.pyc
+*.log
+coverage/
+.DS_Store
+media/source/*
+!media/source/.gitkeep

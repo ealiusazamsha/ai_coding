@@ -1,48 +1,46 @@
-# Autonomous Agentic Commerce Platform (AACP)
+# AACP — Autonomous Agentic Commerce Platform
 
-> **Status:** Implementation foundation / pre-production. This repository is not a production-ready fully autonomous store.
+**Status: runnable local development scaffold, not a production commerce system.**
 
-AACP is a Bangladesh-first, internationally extensible, supplier-fulfilled commerce system. A deterministic transactional core handles catalog, orders, inventory, payment confirmation and fulfillment; bounded AI agents assist customers and coordinate authorized operations.
+Python FastAPI + Next.js + Supabase Cloud PostgreSQL. Designed for Bangladesh and approved international dropshipping markets. The initial version deliberately uses demo-only products and never captures payment or submits real supplier orders.
 
-## Documentation
-- [Product Requirements (PRD)](docs/requirements/PRD.md)
-- [Software Requirements (SRS)](docs/requirements/SRS.md)
-- [Architecture](docs/architecture/OVERVIEW.md)
-- [Media and assets](docs/MEDIA-GUIDE.md)
-- [MVP delivery plan](docs/planning/MVP-PLAN.md)
-- [Security model](docs/security/SECURITY.md)
+## Project layout
+- `docs/SRS.md`: requirements, acceptance criteria, non-functional constraints.
+- `docs/PRS.md`: product scope, milestones and market decisions.
+- `docs/ARCHITECTURE.md`: service and agent architecture.
+- `docs/MEDIA.md`: product assets and private media policies.
+- `apps/storefront/`: accessible, light-theme Next.js storefront.
+- `services/api/`: Python FastAPI typed catalog API and read-only assistant.
+- `supabase/migrations/`: **dedicated AACP schema** for deployment to a new Supabase project.
+- `packages/contracts/`: versioned cross-service event contract.
+- `packages/design-tokens/`: color, typography, spacing specification.
+- `infra/`: local container instructions and configuration.
+- `media/`: source asset and licensing conventions.
 
-## Monorepo layout
-- `apps/storefront` — Next.js storefront, cart and AI-assistant interface
-- `services/api` — FastAPI commerce endpoints and payments boundary
-- `services/agents` — typed agent policies and deterministic MVP assistant
-- `packages/contracts` — cross-service API schemas and payload examples
-- `integrations/suppliers` — supplier adapter specification and fixtures
-- `assets` — controlled source media (never customer personal data)
-- `infra` — Docker Compose and deployment examples
-- `docs` — requirements, architecture, operations and backlog
-- `.github/workflows` — continuous integration
-
-## Local quick start
-```bash
-cp .env.example .env
-docker compose up --build
-```
-Storefront: http://localhost:3000 · API docs: http://localhost:8000/docs
-
-The demo provides sample catalog data, checkout order creation and a **sandbox-only** payment event flow. No real payment capture or supplier purchase is enabled. Do not deploy the demo configuration to production.
-
-## Initial scope
-AACP v0.1 includes a working integration foundation and a simulated supplier. Real payment gateways, authenticated checkout, real supplier APIs, production-grade fulfillment, third-party messaging and multi-tenant SaaS provisioning remain planned milestones. See [MVP plan](docs/planning/MVP-PLAN.md) and [known gaps](docs/KNOWN-GAPS.md).
-
-## Development
+## Run locally
+Backend (Python 3.12+):
 ```bash
 cd services/api
-python -m pip install -r requirements-dev.txt
-pytest
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+uvicorn app.main:app --reload --port 8000
+pytest -q
 ```
+Windows activation: `.venv\Scripts\Activate.ps1`.
 
-Use environment variables and managed secrets; never commit live credentials, personal information, or payment card data.
+Frontend (Node 20+):
+```bash
+cd apps/storefront
+npm install
+npm run dev
+```
+Open http://localhost:3000.
 
-## Ownership
-Project maintained by repository owner. No open-source license has been granted by inclusion in this public repository.
+The backend displays harmless demo catalog items when `DATABASE_URL` is not configured; these are clearly marked as demonstration data. To use Supabase Cloud, create a **new dedicated Supabase project** (do not reuse CareerFlow/HCRE), apply the reviewed SQL migration from `supabase/migrations/`, and set `DATABASE_URL` in the backend's secret store. Never commit credentials. For persistent production deployments use a direct connection or session pooler, depending on IPv6/network support. For serverless use the documented transaction pooler settings.
+
+## Implementation remaining before live commerce
+Production auth and authorization; live supplier integration; verified payment provider; durable order workflow, transactional outbox, audit and idempotency; customer checkout; upload scanning; agent evaluation, observability and security testing. None is represented as complete.
+
+## Safety
+This publicly accessible GitHub repository must never contain database passwords, Supabase service keys, payment tokens, customer data, raw uploaded invoices or proprietary supplier media.
