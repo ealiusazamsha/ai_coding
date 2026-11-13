@@ -10,7 +10,7 @@ from .support import router as support_router
 from .database import get_db
 from .security import current_user
 from .demo import PRODUCTS
-from .commerce import listing, quote, create_pending_order, owned_order
+from .commerce import listing, quote, create_pending_order, owned_order, owned_orders
 from .schemas import ProductOut, QuoteRequest, QuoteResponse, OrderRequest, OrderOut, AssistantRequest, AssistantResponse
 
 config = settings()
@@ -74,6 +74,13 @@ def quote_cart(request: QuoteRequest, db: Session | None = Depends(optional_cata
     if config.demo_mode:
         raise HTTPException(status_code=503, detail="Demo products have no verified supplier stock")
     return quote(db, request)
+
+@app.get("/api/v1/orders", response_model=list[OrderOut])
+def list_orders(user: UUID = Depends(current_user), db: Session = Depends(get_db)):
+    if config.demo_mode:
+        raise HTTPException(status_code=503, detail="Orders disabled in demo mode")
+    return owned_orders(db, user)
+
 
 @app.post("/api/v1/orders", response_model=OrderOut, status_code=201)
 def create_order(request: OrderRequest, user: UUID = Depends(current_user),

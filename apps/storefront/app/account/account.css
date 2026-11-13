@@ -1,0 +1,26 @@
+.account-page{max-width:950px;margin:auto;padding:0 22px 70px}
+.account-nav{display:flex;align-items:center;justify-content:space-between;padding:28px 0}
+.account-back{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--primary);font-weight:700}
+.account-heading{padding:48px 0 22px}.account-heading h1{font-size:clamp(36px,5vw,58px);letter-spacing:-.06em;margin:13px 0}.account-heading p,.account-panel>p{color:var(--muted);line-height:1.65}
+.account-panel{background:#fff;border:1px solid var(--border);border-radius:19px;padding:28px;margin-bottom:20px}
+.account-panel h2{font-size:21px;display:flex;gap:11px;align-items:center;margin:0 0 20px}
+.account-intro{display:flex;gap:17px;align-items:start}
+.account-intro h2{margin:0 0 10px}
+.account-signin{max-width:550px}.account-signin>h2{margin:16px 0 5px}
+.account-form{display:flex;flex-direction:column;gap:15px;margin:22px 0}
+.account-form label{display:flex;flex-direction:column;gap:7px;font-size:12px;font-weight:700;color:#46576d}
+.account-form input,.account-form textarea{padding:12px;border:1px solid #d9e3ef;border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:13px}
+.account-form .btn{align-self:flex-start}
+.account-small{font-size:11px!important;color:var(--muted)}
+.account-error,.account-notice{padding:14px;border-radius:11px;margin:15px 0;font-size:13px}
+.account-error{background:#fff0f2;border:1px solid #f2c9cf;color:#b0273d}
+.account-notice{background:#e9f9f0;border:1px solid #c0e8d1;color:#237548}
+.account-content{display:grid;gap:12px}
+.account-session{display:flex;align-items:center;justify-content:space-between}
+.account-session span,.account-session button{display:flex;align-items:center;gap:8px;font-size:12px}
+.account-session span{color:#188054}.account-session button{background:#fff;border:1px solid var(--border);padding:10px 13px;border-radius:10px}
+.account-record{border-top:1px solid var(--border);padding:17px 0;display:flex;justify-content:space-between;gap:15px}
+.account-record b,.account-record small{display:block}.account-record b{font-size:14px}.account-record small{color:var(--muted);font-size:11px;margin-top:7px}
+.account-record p{font-size:12px;color:var(--muted);line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.account-status{padding:8px 11px;border-radius:40px;height:fit-content;background:#eaf2ff;color:#2469ec;font-size:11px}
+@media(max-width:650px){.account-panel{padding:17px}.account-intro{flex-direction:column}.account-heading{padding-top:23px}}

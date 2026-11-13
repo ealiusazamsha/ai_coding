@@ -124,3 +124,11 @@ def owned_order(db: Session, order_id: UUID, user_id: UUID) -> OrderOut:
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
     return OrderOut(order_id=order.id, status=order.status, currency=order.currency, total_minor=order.total_minor)
+
+def owned_orders(db: Session, user_id: UUID) -> list[OrderOut]:
+    """Only return the authenticated customer's orders for the active tenant."""
+    rows = db.scalars(select(Order).where(
+        Order.tenant_id == settings().tenant_id, Order.customer_user_id == user_id
+    ).order_by(Order.created_at.desc()).limit(100)).all()
+    return [OrderOut(order_id=o.id, status=o.status, currency=o.currency,
+                     total_minor=o.total_minor) for o in rows]
