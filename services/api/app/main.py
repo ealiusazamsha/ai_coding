@@ -20,7 +20,7 @@ app.include_router(admin_router)
 app.include_router(support_router)
 app.add_middleware(CORSMiddleware,
                    allow_origins=[s.strip() for s in __import__("os").getenv("AACP_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if s.strip()],
-                   allow_methods=["GET","POST"], allow_headers=["Authorization","Content-Type","Idempotency-Key"])
+                   allow_methods=["GET","POST","PATCH","OPTIONS"], allow_headers=["Authorization","Content-Type","Idempotency-Key"])
 
 def optional_catalog_db():
     if config.demo_mode:
